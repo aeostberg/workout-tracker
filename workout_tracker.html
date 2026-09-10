@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE - Vibrant Light Workout Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        popPink: '#FF2A85',
+                        popPurple: '#7C3AED',
+                        popCyan: '#06B6D4',
+                        popYellow: '#FFB800',
+                        popOrange: '#FF5722',
+                        popGreen: '#10B981',
+                        softBg: '#FAF5FF',
+                    },
+                    animation: {
+                        'float': 'float 4s ease-in-out infinite',
+                        'bounce-subtle': 'bounceSubtle 2s infinite',
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                    },
+                    keyframes: {
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        },
+                        'bounceSubtle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-3px)' }
+                        },
+                        'pulseGlow': {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.6' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF5FF;
+            color: #1E293B;
+            overflow-x: hidden;
+        }
+
+        .bg-light-pattern {
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(255, 42, 133, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 15%, rgba(6, 182, 212, 0.15) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(255, 184, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 85% 85%, rgba(124, 58, 237, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 15% 90%, rgba(16, 185, 129, 0.12) 0%, transparent 35%);
+            background-attachment: fixed;
+        }
+
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 30px -5px rgba(124, 58, 237, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .glass-card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 35px -10px rgba(255, 42, 133, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.05);
+            border-color: rgba(255, 255, 255, 1);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #FAF5FF; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    </style>
+</head>
+<body class="bg-light-pattern min-h-screen pb-16 text-slate-800 selection:bg-popPink selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/80 border-b border-purple-100/80 px-4 py-3 sm:px-8 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            
+            <!-- Logo & Brand Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-popPink via-popPurple to-popCyan p-0.5 shadow-md shadow-popPink/20 animate-float">
+                    <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-popPink font-extrabold text-xl">
+                        ⚡
+                    </div>
+                </div>
+                <div>
+                    <h1 class="font-display font-black text-xl leading-none tracking-tight text-slate-900 flex items-center gap-2">
+                        PULSE <span class="text-[10px] uppercase font-black tracking-widest px-2 py-0.5 rounded-full bg-gradient-to-r from-popPink to-popPurple text-white shadow-sm">LIFT</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-semibold mt-0.5">Vibrant Strength Tracker 🏋️‍♂️✨</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls / Day Switcher -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Day A / Day B Tabs -->
+                <div class="p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 flex items-center gap-1 text-xs font-bold shadow-inner">
+                    <button id="tab-day-a" onclick="switchDay('A')" class="px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold">
+                        <span>⚡ DAY A</span>
+                    </button>
+                    <button id="tab-day-b" onclick="switchDay('B')" class="px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold">
+                        <span>🔥 DAY B</span>
+                    </button>
+                </div>
+
+                <!-- Clear Data Button -->
+                <button onclick="confirmClearData()" title="Clear Logged Data" class="p-2.5 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-200/80 transition-all text-xs flex items-center gap-1.5 font-bold shadow-sm active:scale-95">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span class="hidden sm:inline">Reset</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-8 pt-6">
+
+        <!-- Main Exercises Section Title -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+                <span class="text-2xl" id="main-section-emoji">💪</span>
+                <div>
+                    <h2 class="font-display font-black text-xl text-slate-900 tracking-tight" id="main-section-title">Day A Lifts</h2>
+                    <p class="text-xs text-slate-500 font-medium">Core movements with progress sparklines</p>
+                </div>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-white border border-purple-200 text-popPurple shadow-sm" id="day-badge-top">Day A</span>
+        </div>
+
+        <!-- Main Exercises Grid -->
+        <div id="exercises-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- Accessories Section -->
+        <section class="mb-10 glass-card-light rounded-3xl p-6 sm:p-7 shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-popYellow to-popOrange text-white flex items-center justify-center text-lg font-bold shadow-md shadow-popOrange/20">
+                        🔥
+                    </div>
+                    <div>
+                        <h2 class="font-display font-black text-lg text-slate-900">Accessory Exercises</h2>
+                        <p class="text-xs text-slate-500 font-medium">Quick logs for supplemental work</p>
+                    </div>
+                </div>
+                <span class="text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full bg-popYellow/10 text-popOrange border border-popYellow/30" id="accessory-day-tag">Day A</span>
+            </div>
+
+            <!-- Compact Accessories Grid -->
+            <div id="accessories-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- Workout History Table -->
+        <section class="glass-card-light rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-popPurple to-popCyan text-white flex items-center justify-center text-lg font-bold shadow-md shadow-popPurple/20">
+                        📊
+                    </div>
+                    <div>
+                        <h2 class="font-display font-black text-xl text-slate-900">Workout Log History</h2>
+                        <p class="text-xs text-slate-500 font-medium">Recorded sets for Day A and Day B</p>
+                    </div>
+                </div>
+                <span class="text-xs font-bold text-slate-600 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm" id="history-count">0 entries logged</span>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 shadow-inner">
+                <table class="w-full text-left text-xs text-slate-700">
+                    <thead class="text-[10px] uppercase font-black tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="py-3.5 px-4">Date</th>
+                            <th class="py-3.5 px-4">Split</th>
+                            <th class="py-3.5 px-4">Exercise</th>
+                            <th class="py-3.5 px-4">Weight</th>
+                            <th class="py-3.5 px-4">Reps</th>
+                            <th class="py-3.5 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-slate-100 font-medium">
+                        <!-- Dynamically populated -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification Popup -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-28 opacity-0 transition-all duration-300 ease-out pointer-events-none flex items-center gap-3.5 bg-white text-slate-900 px-5 py-4 rounded-2xl border-2 border-popGreen shadow-2xl backdrop-blur-xl">
+        <div id="toast-icon" class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold">
+            ✅
+        </div>
+        <div>
+            <p id="toast-title" class="font-display font-black text-sm text-slate-900">Log Recorded!</p>
+            <p id="toast-message" class="text-xs text-slate-500 font-medium">Set added successfully.</p>
+        </div>
+    </div>
+
+    <script>
+        // Exercise Configurations
+        const EXERCISES_CONFIG = {
+            'A': [
+                { 
+                    id: 'squat', 
+                    name: 'Squat', 
+                    emoji: '🏋️‍♂️', 
+                    color: '#FF2A85', 
+                    bgColor: 'bg-pink-50', 
+                    borderColor: 'border-pink-200', 
+                    badgeBg: 'bg-pink-100 text-pink-700 border-pink-200',
+                    defaultReps: 15 
+                },
+                { 
+                    id: 'bench_press', 
+                    name: 'Bench Press', 
+                    emoji: '💪', 
+                    color: '#06B6D4', 
+                    bgColor: 'bg-cyan-50', 
+                    borderColor: 'border-cyan-200', 
+                    badgeBg: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+                    defaultReps: 18 
+                },
+                { 
+                    id: 'chest_row', 
+                    name: 'Chest Supported Row', 
+                    emoji: '🚣‍♂️', 
+                    color: '#FFB800', 
+                    bgColor: 'bg-amber-50', 
+                    borderColor: 'border-amber-200', 
+                    badgeBg: 'bg-amber-100 text-amber-700 border-amber-200',
+                    defaultReps: 18 
+                }
+            ],
+            'B': [
+                { 
+                    id: 'deadlift', 
+                    name: 'Deadlift', 
+                    emoji: '🔥', 
+                    color: '#7C3AED', 
+                    bgColor: 'bg-purple-50', 
+                    borderColor: 'border-purple-200', 
+                    badgeBg: 'bg-purple-100 text-purple-700 border-purple-200',
+                    defaultReps: 15 
+                },
+                { 
+                    id: 'overhead_press', 
+                    name: 'Overhead Press', 
+                    emoji: '🚀', 
+                    color: '#FF5722', 
+                    bgColor: 'bg-orange-50', 
+                    borderColor: 'border-orange-200', 
+                    badgeBg: 'bg-orange-100 text-orange-700 border-orange-200',
+                    defaultReps: 18 
+                },
+                { 
+                    id: 'lat_pulldown', 
+                    name: 'Lat Pulldown', 
+                    emoji: '🎯', 
+                    color: '#10B981', 
+                    bgColor: 'bg-emerald-50', 
+                    borderColor: 'border-emerald-200', 
+                    badgeBg: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                    defaultReps: 18 
+                }
+            ]
+        };
+
+        const ACCESSORIES_CONFIG = {
+            'A': [
+                { id: 'hip_thrust', name: 'Hip Thrust', emoji: '⚡', color: '#FF2A85', defaultReps: 18 },
+                { id: 'tricep_extension', name: 'Tricep Extension', emoji: '💥', color: '#06B6D4', defaultReps: 18 },
+                { id: 'bicep_curl', name: 'Bicep Curl', emoji: '🥇', color: '#FFB800', defaultReps: 18 }
+            ],
+            'B': [
+                { id: 'bulgarian_split_squat', name: 'Bulgarian Split Squat', emoji: '🍗', color: '#7C3AED', defaultReps: 18 },
+                { id: 'face_pull', name: 'Face Pull', emoji: '✨', color: '#FF5722', defaultReps: 18 },
+                { id: 'lateral_raise', name: 'Lateral Raise', emoji: '🦅', color: '#10B981', defaultReps: 18 }
+            ]
+        };
+
+        // Application state
+        let currentDay = 'A';
+        let workoutData = {};
+        let activeChartInstances = {};
+
+        function loadData() {
+            const saved = localStorage.getItem('pulse_workout_data_v2');
+            if (saved) {
+                try {
+                    workoutData = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Failed to parse local storage data, resetting.", e);
+                    initEmptyData();
+                }
+            } else {
+                initEmptyData();
+            }
+        }
+
+        function initEmptyData() {
+            workoutData = {
+                squat: [], bench_press: [], chest_row: [],
+                deadlift: [], overhead_press: [], lat_pulldown: [],
+                hip_thrust: [], tricep_extension: [], bicep_curl: [],
+                bulgarian_split_squat: [], face_pull: [], lateral_raise: []
+            };
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem('pulse_workout_data_v2', JSON.stringify(workoutData));
+        }
+
+        function confirmClearData() {
+            if (confirm("Are you sure you want to clear all logged workouts? This cannot be undone.")) {
+                initEmptyData();
+                renderAll();
+                showToast("Data Reset", "All logged workouts have been cleared.", "info");
+            }
+        }
+
+        function switchDay(day) {
+            currentDay = day;
+            const tabA = document.getElementById('tab-day-a');
+            const tabB = document.getElementById('tab-day-b');
+
+            if (day === 'A') {
+                tabA.className = "px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold bg-gradient-to-r from-popPink to-popPurple text-white shadow-md shadow-popPink/20 scale-105";
+                tabB.className = "px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold text-slate-500 hover:text-slate-900 hover:bg-slate-200/60";
+                document.getElementById('main-section-emoji').innerText = '💪';
+                document.getElementById('main-section-title').innerText = 'Day A Lifts';
+                document.getElementById('day-badge-top').innerText = 'Day A';
+                document.getElementById('day-badge-top').className = 'text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full bg-pink-100 text-popPink border border-pink-200 shadow-sm';
+            } else {
+                tabB.className = "px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold bg-gradient-to-r from-popPurple to-popCyan text-white shadow-md shadow-popPurple/20 scale-105";
+                tabA.className = "px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 font-display font-extrabold text-slate-500 hover:text-slate-900 hover:bg-slate-200/60";
+                document.getElementById('main-section-emoji').innerText = '🔥';
+                document.getElementById('main-section-title').innerText = 'Day B Lifts';
+                document.getElementById('day-badge-top').innerText = 'Day B';
+                document.getElementById('day-badge-top').className = 'text-xs font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-full bg-purple-100 text-popPurple border border-purple-200 shadow-sm';
+            }
+
+            document.getElementById('accessory-day-tag').innerText = `Day ${day}`;
+
+            renderExercises();
+            renderAccessories();
+        }
+
+        function renderExercises() {
+            const container = document.getElementById('exercises-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Destroy existing charts to prevent memory leaks or overlay issues
+            Object.keys(activeChartInstances).forEach(key => {
+                if (activeChartInstances[key]) {
+                    try { activeChartInstances[key].destroy(); } catch(e){}
+                }
+            });
+            activeChartInstances = {};
+
+            const exercises = EXERCISES_CONFIG[currentDay] || [];
+
+            exercises.forEach(ex => {
+                const logs = workoutData[ex.id] || [];
+                let prVal = 0;
+                let lastLog = null;
+                if (logs.length > 0) {
+                    prVal = Math.max(...logs.map(l => Number(l.weight) || 0));
+                    lastLog = logs[logs.length - 1];
+                }
+
+                const defaultWeight = lastLog ? lastLog.weight : '';
+                const defaultReps = lastLog ? lastLog.reps : ex.defaultReps;
+
+                const cardHtml = `
+                    <div class="glass-card-light glass-card-hover rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between group">
+                        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-${ex.color} to-purple-400"></div>
+
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl ${ex.bgColor} border ${ex.borderColor} flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                                        ${ex.emoji}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-display font-black text-lg text-slate-900 leading-tight">${ex.name}</h3>
+                                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Target: ${ex.defaultReps} Reps</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-right px-3 py-1.5 rounded-2xl border ${ex.badgeBg} shadow-sm">
+                                    <span class="block text-[8px] font-black uppercase tracking-wider opacity-80">PAST MAX</span>
+                                    <span class="font-display font-black text-sm">
+                                        ${logs.length > 0 ? prVal : '---'} 
+                                        <span class="text-[10px] font-bold">${logs.length > 0 ? 'lbs' : ''}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 mb-4 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
+                                <div>
+                                    <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Weight (lbs)</label>
+                                    <input type="number" id="input-weight-${ex.id}" step="0.5" min="0" value="${defaultWeight}" placeholder="e.g. 135" 
+                                        class="w-full bg-white border border-slate-200 focus:border-popPink focus:ring-2 focus:ring-popPink/20 rounded-xl px-3 py-2 text-sm font-black text-slate-800 outline-none transition-all shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black uppercase text-slate-500 mb-1">Reps</label>
+                                    <input type="number" id="input-reps-${ex.id}" min="1" value="${defaultReps}" placeholder="e.g. ${ex.defaultReps}" 
+                                        class="w-full bg-white border border-slate-200 focus:border-popPink focus:ring-2 focus:ring-popPink/20 rounded-xl px-3 py-2 text-sm font-black text-slate-800 outline-none transition-all shadow-sm">
+                                </div>
+                            </div>
+
+                            <button onclick="logSet('${ex.id}', '${ex.name}')" 
+                                class="w-full py-3 px-4 rounded-2xl font-display font-extrabold text-xs uppercase tracking-wider bg-slate-900 hover:bg-gradient-to-r hover:from-popPink hover:to-popPurple text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95">
+                                ➕ Log Workout Set
+                            </button>
+                        </div>
+
+                        <div class="mt-5 pt-4 border-t border-slate-200/80">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Progress History</span>
+                                <span class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">${logs.length} sets logged</span>
+                            </div>
+
+                            <div class="h-24 w-full relative flex items-center justify-center bg-slate-50/50 rounded-2xl p-2 border border-slate-100">
+                                ${logs.length === 0 ? `
+                                    <div class="text-center py-2">
+                                        <span class="text-xl mb-1 block">📈</span>
+                                        <p class="text-xs font-bold text-slate-400">No logs yet. Add your first set!</p>
+                                    </div>
+                                ` : `
+                                    <canvas id="chart-${ex.id}"></canvas>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            // Initialize sparkline charts safely
+            setTimeout(() => {
+                exercises.forEach(ex => {
+                    const logs = workoutData[ex.id] || [];
+                    if (logs.length > 0) {
+                        initChart(ex);
+                    }
+                });
+            }, 50);
+        }
+
+        function renderAccessories() {
+            const container = document.getElementById('accessories-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const accessories = ACCESSORIES_CONFIG[currentDay] || [];
+
+            accessories.forEach(acc => {
+                const logs = workoutData[acc.id] || [];
+                let prVal = 0;
+                let lastLog = null;
+
+                if (logs.length > 0) {
+                    prVal = Math.max(...logs.map(l => Number(l.weight) || 0));
+                    lastLog = logs[logs.length - 1];
+                }
+
+                const defaultWeight = lastLog ? lastLog.weight : '';
+                const defaultReps = lastLog ? lastLog.reps : acc.defaultReps;
+
+                const accHtml = `
+                    <div class="bg-white/90 border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between hover:border-popPurple/30 transition-all shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-lg shadow-inner">
+                                    ${acc.emoji}
+                                </div>
+                                <h3 class="font-display font-black text-sm text-slate-800">${acc.name}</h3>
+                            </div>
+                            <div class="text-right bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-100">
+                                <span class="text-[8px] uppercase font-black text-purple-600 block leading-tight">Past Max</span>
+                                <span class="font-display font-black text-xs text-popPurple">
+                                    ${logs.length > 0 ? prVal + ' lbs' : '---'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <input type="number" id="input-weight-${acc.id}" step="0.5" min="0" value="${defaultWeight}" placeholder="Weight lbs"
+                                    class="w-full bg-slate-50 border border-slate-200 focus:border-popPurple rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 outline-none">
+                            </div>
+                            <div class="w-16">
+                                <input type="number" id="input-reps-${acc.id}" min="1" value="${defaultReps}" placeholder="Reps"
+                                    class="w-full bg-slate-50 border border-slate-200 focus:border-popPurple rounded-xl px-2 py-1.5 text-xs font-black text-slate-800 text-center outline-none">
+                            </div>
+                            <button onclick="logSet('${acc.id}', '${acc.name}')" 
+                                class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-popPink text-white font-display font-extrabold text-xs transition-all flex items-center gap-1 active:scale-95 shrink-0 shadow-sm">
+                                ➕ Log
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.insertAdjacentHTML('beforeend', accHtml);
+            });
+        }
+
+        function initChart(exercise) {
+            const canvas = document.getElementById(`chart-${exercise.id}`);
+            if (!canvas) return;
+
+            const logs = workoutData[exercise.id] || [];
+            const labels = logs.map((_, i) => `Set ${i + 1}`);
+            const dataValues = logs.map(l => l.weight);
+
+            const ctx = canvas.getContext('2d');
+            activeChartInstances[exercise.id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        borderColor: exercise.color,
+                        borderWidth: 3,
+                        pointBackgroundColor: exercise.color,
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        tension: 0.35,
+                        fill: true,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                            gradient.addColorStop(0, `${exercise.color}33`);
+                            gradient.addColorStop(1, 'transparent');
+                            return gradient;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, grace: '12%' }
+                    }
+                }
+            });
+        }
+
+        function logSet(exerciseId, exerciseName) {
+            const weightInput = document.getElementById(`input-weight-${exerciseId}`);
+            const repsInput = document.getElementById(`input-reps-${exerciseId}`);
+
+            const weightVal = parseFloat(weightInput ? weightInput.value : '');
+            const repsVal = parseInt(repsInput ? repsInput.value : '');
+
+            if (isNaN(weightVal) || weightVal <= 0) {
+                showToast("Invalid Weight", "Please enter a valid weight in lbs.", "error");
+                return;
+            }
+
+            if (isNaN(repsVal) || repsVal <= 0) {
+                showToast("Invalid Reps", "Please enter a valid rep count.", "error");
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            if (!workoutData[exerciseId]) {
+                workoutData[exerciseId] = [];
+            }
+
+            const prevMax = workoutData[exerciseId].length > 0 
+                ? Math.max(...workoutData[exerciseId].map(l => Number(l.weight) || 0))
+                : 0;
+
+            const isPR = weightVal > prevMax && workoutData[exerciseId].length > 0;
+
+            workoutData[exerciseId].push({
+                id: Date.now().toString(),
+                date: today,
+                weight: weightVal,
+                reps: repsVal
+            });
+
+            saveData();
+            renderExercises();
+            renderAccessories();
+            renderHistoryTable();
+
+            if (isPR && typeof confetti === 'function') {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                showToast("NEW PERSONAL RECORD! 🎉", `${exerciseName}: ${weightVal} lbs x ${repsVal} reps!`, "pr");
+            } else {
+                showToast("Set Logged! 💪", `${exerciseName}: ${weightVal} lbs x ${repsVal} reps added.`);
+            }
+        }
+
+        function deleteLog(exerciseId, logId) {
+            if (!workoutData[exerciseId]) return;
+            workoutData[exerciseId] = workoutData[exerciseId].filter(item => item.id !== logId);
+            saveData();
+            renderExercises();
+            renderAccessories();
+            renderHistoryTable();
+            showToast("Log Removed", "Selected entry has been deleted.", "info");
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let allLogs = [];
+            const allConfig = [
+                ...EXERCISES_CONFIG['A'], ...EXERCISES_CONFIG['B'],
+                ...ACCESSORIES_CONFIG['A'], ...ACCESSORIES_CONFIG['B']
+            ];
+
+            Object.keys(workoutData).forEach(exId => {
+                let dayLabel = 'Day A';
+                if (EXERCISES_CONFIG['B'].some(e => e.id === exId) || ACCESSORIES_CONFIG['B'].some(a => a.id === exId)) {
+                    dayLabel = 'Day B';
+                }
+
+                const config = allConfig.find(e => e.id === exId);
+                const exName = config ? config.name : exId;
+
+                (workoutData[exId] || []).forEach(log => {
+                    allLogs.push({
+                        ...log,
+                        exerciseId: exId,
+                        exerciseName: exName,
+                        day: dayLabel
+                    });
+                });
+            });
+
+            allLogs.sort((a, b) => b.id - a.id);
+
+            const countElem = document.getElementById('history-count');
+            if (countElem) countElem.innerText = `${allLogs.length} entries logged`;
+
+            if (allLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-slate-400">
+                            <span class="text-2xl mb-2 block">📋</span>
+                            <p class="font-bold text-slate-500">No workout history logged yet.</p>
+                            <p class="text-xs">Enter your first set above to start tracking!</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            allLogs.forEach(item => {
+                const dayBadgeColor = item.day === 'Day A' 
+                    ? 'bg-pink-100 text-popPink border-pink-200' 
+                    : 'bg-purple-100 text-popPurple border-purple-200';
+
+                const row = `
+                    <tr class="hover:bg-purple-50/50 transition-colors">
+                        <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">${item.date}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border ${dayBadgeColor}">
+                                ${item.day}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 font-black text-slate-900">${item.exerciseName}</td>
+                        <td class="py-3.5 px-4 font-black text-popCyan">${item.weight} <span class="text-[10px] text-slate-400 font-normal">lbs</span></td>
+                        <td class="py-3.5 px-4 font-bold text-slate-700">${item.reps} reps</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <button onclick="deleteLog('${item.exerciseId}', '${item.id}')" title="Delete entry" class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function showToast(title, message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastTitle = document.getElementById('toast-title');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!toast) return;
+
+            toastTitle.innerText = title;
+            toastMessage.innerText = message;
+
+            if (type === "pr") {
+                toast.className = "fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 ease-out pointer-events-none flex items-center gap-3.5 bg-white text-slate-900 px-5 py-4 rounded-2xl border-2 border-popPink shadow-2xl backdrop-blur-xl";
+                toastIcon.className = "w-10 h-10 rounded-xl bg-pink-100 text-popPink flex items-center justify-center text-lg font-bold";
+                toastIcon.innerText = "🏆";
+            } else if (type === "error") {
+                toast.className = "fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 ease-out pointer-events-none flex items-center gap-3.5 bg-white text-slate-900 px-5 py-4 rounded-2xl border-2 border-rose-500 shadow-2xl backdrop-blur-xl";
+                toastIcon.className = "w-10 h-10 rounded-xl bg-rose-100 text-rose-500 flex items-center justify-center text-lg font-bold";
+                toastIcon.innerText = "⚠️";
+            } else {
+                toast.className = "fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 ease-out pointer-events-none flex items-center gap-3.5 bg-white text-slate-900 px-5 py-4 rounded-2xl border-2 border-popGreen shadow-2xl backdrop-blur-xl";
+                toastIcon.className = "w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg font-bold";
+                toastIcon.innerText = "✅";
+            }
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-28', 'opacity-0');
+            }, 3000);
+        }
+
+        function renderAll() {
+            switchDay(currentDay);
+            renderHistoryTable();
+        }
+
+        function initApp() {
+            loadData();
+            renderAll();
+        }
+
+        // Initialize directly or on DOM load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
