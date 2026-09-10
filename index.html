@@ -129,10 +129,10 @@
                 </div>
 
                 <!-- Clear Data Button -->
-                <button onclick="confirmClearData()" title="Clear Logged Data" class="p-2.5 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-200/80 transition-all text-xs flex items-center gap-1.5 font-bold shadow-sm active:scale-95">
+                <!-- <button onclick="confirmClearData()" title="Clear Logged Data" class="p-2.5 rounded-2xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-200/80 transition-all text-xs flex items-center gap-1.5 font-bold shadow-sm active:scale-95">
                     <i class="fa-solid fa-trash-can"></i>
                     <span class="hidden sm:inline">Reset</span>
-                </button>
+                </button> -->
             </div>
         </div>
     </header>
@@ -185,7 +185,13 @@
                         📊
                     </div>
                     <div>
-                        <h2 class="font-display font-black text-xl text-slate-900">Workout Log History</h2>
+                        <div class="flex items-center gap-2.5">
+                            <h2 class="font-display font-black text-xl text-slate-900">Workout Log History</h2>
+                            <button type="button" onclick="copyWorkoutData()" title="Copy localStorage data" class="shrink-0 px-2.5 py-1 rounded-xl bg-purple-50 text-popPurple hover:bg-popPurple hover:text-white border border-purple-200/80 transition-all text-[10px] flex items-center gap-1.5 font-black uppercase tracking-wider shadow-sm active:scale-95">
+                                <i class="fa-regular fa-copy"></i>
+                                <span>Copy</span>
+                            </button>
+                        </div>
                         <p class="text-xs text-slate-500 font-medium">Recorded sets for Day A and Day B</p>
                     </div>
                 </div>
@@ -294,14 +300,14 @@
 
         const ACCESSORIES_CONFIG = {
             'A': [
-                { id: 'hip_thrust', name: 'Hip Thrust', emoji: '⚡', color: '#FF2A85', defaultReps: 18 },
-                { id: 'tricep_extension', name: 'Tricep Extension', emoji: '💥', color: '#06B6D4', defaultReps: 18 },
-                { id: 'bicep_curl', name: 'Bicep Curl', emoji: '🥇', color: '#FFB800', defaultReps: 18 }
+                { id: 'hip_thrust', name: 'Hip Thrust', emoji: '⚡', color: '#FF2A85', defaultReps: 30 },
+                { id: 'tricep_extension', name: 'Tricep Extension', emoji: '💥', color: '#06B6D4', defaultReps: 30 },
+                { id: 'bicep_curl', name: 'Bicep Curl', emoji: '🥇', color: '#FFB800', defaultReps: 30 }
             ],
             'B': [
-                { id: 'bulgarian_split_squat', name: 'Bulgarian Split Squat', emoji: '🍗', color: '#7C3AED', defaultReps: 18 },
-                { id: 'face_pull', name: 'Face Pull', emoji: '✨', color: '#FF5722', defaultReps: 18 },
-                { id: 'lateral_raise', name: 'Lateral Raise', emoji: '🦅', color: '#10B981', defaultReps: 18 }
+                { id: 'bulgarian_split_squat', name: 'Bulgarian Split Squat', emoji: '🍗', color: '#7C3AED', defaultReps: 30 },
+                { id: 'face_pull', name: 'Face Pull', emoji: '✨', color: '#FF5722', defaultReps: 30 },
+                { id: 'lateral_raise', name: 'Lateral Raise', emoji: '🦅', color: '#10B981', defaultReps: 30 }
             ]
         };
 
@@ -336,6 +342,31 @@
 
         function saveData() {
             localStorage.setItem('pulse_workout_data_v2', JSON.stringify(workoutData));
+        }
+
+        function copyWorkoutData() {
+            const data = localStorage.getItem('pulse_workout_data_v2') || JSON.stringify(workoutData);
+            const onSuccess = () => showToast("Copied", "Workout data copied to clipboard.");
+            const onError = () => showToast("Copy Failed", "Could not copy workout data to the clipboard.", "error");
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(data).then(onSuccess).catch(onError);
+                return;
+            }
+
+            const textarea = document.createElement('textarea');
+            textarea.value = data;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy') ? onSuccess() : onError();
+            } catch (e) {
+                onError();
+            }
+            document.body.removeChild(textarea);
         }
 
         function confirmClearData() {
@@ -698,7 +729,7 @@
                     <tr class="hover:bg-purple-50/50 transition-colors">
                         <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">${item.date}</td>
                         <td class="py-3.5 px-4">
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border ${dayBadgeColor}">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black border whitespace-nowrap ${dayBadgeColor}">
                                 ${item.day}
                             </span>
                         </td>
